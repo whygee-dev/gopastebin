@@ -1,0 +1,45 @@
+package middleware
+
+import (
+	"context"
+	"gopastebin/consts"
+	"net/http"
+	"slices"
+	"strings"
+
+	"github.com/golang-jwt/jwt"
+)
+
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bearer := r.Header.Get("Authorization")
+
+		publicRoutes := consts.GetPublicRoutes()
+
+		if slices.Contains(publicRoutes, r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if bearer == "" {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+
+		token, err := jwt.ParseWithClaims(strings.Split(bearer, " ")[1], &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return consts.GetSecret(), nil
+		})
+
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		ctx = context.WithValue(ctx, "token", token)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
