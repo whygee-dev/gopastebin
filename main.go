@@ -21,6 +21,8 @@ func main() {
 	handler.SetupUserRoutes(db, router)
 	handler.SetupPasteRoutes(db, router)
 
+	log.Println("Server starting on port " + consts.GetPort())
+
     log.Fatal(http.ListenAndServe(":" + consts.GetPort(), middleware.AuthMiddleware(middleware.JsonContentTypeMiddleware(router))))
 }
 

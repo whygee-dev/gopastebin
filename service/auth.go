@@ -15,3 +15,15 @@ func CreateToken() (string, error) {
 
 	return token, nil
 }
+
+func DecodeToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return consts.GetSecret(), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}

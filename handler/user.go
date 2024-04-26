@@ -77,44 +77,40 @@ func Signup(db *sql.DB) http.HandlerFunc {
 		decoder := json.NewDecoder(r.Body)	
 		err := decoder.Decode(&body)
 
+		if err != nil {
+			log.Println(err)
+
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		}
+
 		if body.Email == "" || body.Password == "" {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-
-			return
 		}
 
 		if len(body.Password) < 8 {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-
-			return
 		}
 
 		if !regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`).MatchString(body.Email) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-
-			return
 		}
 
 		if err != nil {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
 
 		cust_err, err := service.CreateUser(db, body)
 
 		if cust_err != nil {
 			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-
-			return
 		}
 
 		if err != nil {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
 			
 

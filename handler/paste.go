@@ -34,7 +34,6 @@ func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -53,8 +52,7 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 		if err != nil {
 			log.Println(err)
 
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		}
 
 		id, err := service.CreatePaste(db, body)
@@ -79,15 +77,8 @@ func GetPasteStatsHandler(db *sql.DB) http.HandlerFunc {
 
 		stats, err := service.GetStats(db)
 
-		if err == sql.ErrNoRows {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-
-			return
-		}
-
 		if err != nil {
 			log.Println(err)
-
 			
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
@@ -97,3 +88,4 @@ func GetPasteStatsHandler(db *sql.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(&stats)
 	}
 }
+

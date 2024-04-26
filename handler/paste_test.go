@@ -1,11 +1,10 @@
-package integration_test
+package handler
 
 import (
 	"bytes"
 	"encoding/json"
 	"gopastebin/consts"
 	"gopastebin/db"
-	"gopastebin/handler"
 	"gopastebin/utils"
 	"net/http"
 	"net/http/httptest"
@@ -18,7 +17,7 @@ import (
 func TestGetPasteHandlerHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-	handler.SetupPasteRoutes(db, router)
+	SetupPasteRoutes(db, router)
 	defer utils.TestTearDown(db)
 
 	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count) VALUES (?, ?, ?)", "content", "short_id", 1)
@@ -72,10 +71,37 @@ func TestGetPasteHandlerHappyPath(t *testing.T) {
 	}
 }
 
-func TestGetPasteHandlerNotFoundPath(t *testing.T) {
+func TestGetPasteHandlerNotFound(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-	handler.SetupPasteRoutes(db, router)
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count, expiry) VALUES (?, ?, ?, ?)", "content", "short_id", 1, "2020-01-01T00:00:00Z")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("GET", utils.BuildUrl("/paste/short_id", consts.GetPort()), nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusNotFound {
+		t.Errorf("Response code was %v; want 404", res.Code)
+	}
+}
+
+func TestGetPasteHandlerExpired(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
 	defer utils.TestTearDown(db)
 
 	req, err := http.NewRequest("GET", utils.BuildUrl("/paste/short_id", consts.GetPort()), nil)
@@ -93,10 +119,37 @@ func TestGetPasteHandlerNotFoundPath(t *testing.T) {
 	}
 }
 
+func TestGetPasteInternalServerError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE paste`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("GET", utils.BuildUrl("/paste/short_id", consts.GetPort()), nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Response code was %v; want 500", res.Code)
+	}
+}
+
 func TestCreatePasteHandlerHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-	handler.SetupPasteRoutes(db, router)
+	SetupPasteRoutes(db, router)
 	defer utils.TestTearDown(db)
 
 	body := map[string]string{
@@ -145,10 +198,34 @@ func TestCreatePasteHandlerHappyPath(t *testing.T) {
 	}
 }
 
+func TestCreatePasteHandlerInvalidBody(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	buffer := new(bytes.Buffer)
+
+	req, err := http.NewRequest("PUT", utils.BuildUrl("/paste/create", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("Response code was %v; want 400", res.Code)
+	}
+}
+
+
 func TestStatsHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-	handler.SetupPasteRoutes(db, router)
+	SetupPasteRoutes(db, router)
 	defer utils.TestTearDown(db)
 
 	_, err := db.Exec(`
