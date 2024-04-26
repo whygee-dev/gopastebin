@@ -88,9 +88,7 @@ func TestLoginNotFoundPath(t *testing.T) {
 func TestRegisterHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-
 	handler.SetupUserRoutes(db, router)
-
 	defer utils.TestTearDown(db)
 
 	email := "admin@gmail.com"

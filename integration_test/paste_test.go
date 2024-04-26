@@ -18,9 +18,7 @@ import (
 func TestGetPasteHandlerHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-
 	handler.SetupPasteRoutes(db, router)
-
 	defer utils.TestTearDown(db)
 
 	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count) VALUES (?, ?, ?)", "content", "short_id", 1)
@@ -77,9 +75,7 @@ func TestGetPasteHandlerHappyPath(t *testing.T) {
 func TestGetPasteHandlerNotFoundPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-
 	handler.SetupPasteRoutes(db, router)
-
 	defer utils.TestTearDown(db)
 
 	req, err := http.NewRequest("GET", utils.BuildUrl("/paste/short_id", consts.GetPort()), nil)
@@ -100,9 +96,7 @@ func TestGetPasteHandlerNotFoundPath(t *testing.T) {
 func TestCreatePasteHandlerHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-
 	handler.SetupPasteRoutes(db, router)
-
 	defer utils.TestTearDown(db)
 
 	body := map[string]string{
@@ -148,9 +142,7 @@ func TestCreatePasteHandlerHappyPath(t *testing.T) {
 func TestStatsHappyPath(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
-
 	handler.SetupPasteRoutes(db, router)
-
 	defer utils.TestTearDown(db)
 
 	_, err := db.Exec(`
