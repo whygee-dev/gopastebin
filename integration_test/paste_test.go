@@ -101,6 +101,7 @@ func TestCreatePasteHandlerHappyPath(t *testing.T) {
 
 	body := map[string]string{
 		"content": "content",
+		"expiry": "2020-01-01T00:00:00Z",
 	}
 	buffer := new(bytes.Buffer)
 	json.NewEncoder(buffer).Encode(body)
@@ -128,14 +129,19 @@ func TestCreatePasteHandlerHappyPath(t *testing.T) {
 		t.Errorf("Response body was %v; want not empty", result["shortId"])
 	}
 
-	paste_row := db.QueryRow("SELECT content FROM paste WHERE short_id = ?", result["id"])
+	paste_row := db.QueryRow("SELECT content, expiry FROM paste WHERE short_id = ?", result["id"])
 
 	var content string
+	var expiry string
 
-	paste_row.Scan(&content)
+	paste_row.Scan(&content, &expiry)
 
 	if content != "content" {
 		t.Errorf("Content was %v; want 'content'", content)
+	}
+
+	if expiry != "2020-01-01T00:00:00Z" {
+		t.Errorf("Expiry was %v; want '2020-01-01T00:00:00Z'", expiry)
 	}
 }
 

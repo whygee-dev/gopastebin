@@ -21,7 +21,8 @@ func CreateDb () *sql.DB {
             content text not null, 
             short_id text not null,
             click_count integer not null, 
-            created_at datetime default current_timestamp
+            created_at datetime default current_timestamp,
+			expiry datetime default null
         );
 
         create unique index if not exists paste_short_id_uindex

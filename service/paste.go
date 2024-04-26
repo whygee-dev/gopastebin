@@ -17,7 +17,7 @@ func CreatePaste(db *sql.DB, data models.CreatePaste) (string, error) {
 	s, _ := sqids.New()
 	id, _ := s.Encode([]uint64{uint64(current_id + 1)})
 
-	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count) VALUES (?, ?, ?)", data.Content, id, 0)
+	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count, expiry) VALUES (?, ?, ?, ?)", data.Content, id, 0, data.Expiry)
 
 	if err != nil {
 		log.Println(err)
@@ -29,7 +29,10 @@ func CreatePaste(db *sql.DB, data models.CreatePaste) (string, error) {
 }
 
 func GetPaste(db *sql.DB, id string) (models.Paste, error) {
-	row := db.QueryRow("SELECT content, short_id, click_count, created_at FROM paste WHERE short_id = ?", id)
+	row := db.QueryRow(`
+		SELECT content, short_id, click_count, created_at FROM paste 
+		WHERE short_id = ? AND (expiry IS NULL OR expiry > datetime('now'))
+	`, id)
 	var paste models.Paste
 	err := row.Scan(&paste.Content, &paste.ShortID, &paste.ClickCount, &paste.CreatedAt)
 

@@ -5,4 +5,5 @@ type Paste struct {
 	ClickCount  int         `json:"clickCount"`
     Content     string 	  	`json:"content"`
 	CreatedAt   string      `json:"createdAt"`
+	Expiry      string      `json:"expiry"`
 }
