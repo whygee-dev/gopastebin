@@ -8,6 +8,7 @@ import (
 	"gopastebin/db"
 	"gopastebin/handler"
 	"gopastebin/models"
+	"gopastebin/service"
 	"gopastebin/utils"
 	"net/http"
 	"net/http/httptest"
@@ -26,8 +27,7 @@ func TestLoginHappyPath(t *testing.T) {
 
 	email := "admin@gmail.com"
 	rawPassword := "password"
-	salt, time, memory, threads, keyLen := consts.GetArgonOptions()
-	password := argon2.Key([]byte(rawPassword), salt, time, memory, threads, keyLen)
+	password := service.HashPassword(rawPassword)
 
 	_, err := db.Exec("INSERT INTO user (email, password) VALUES (?, ?)", email, password)
 
