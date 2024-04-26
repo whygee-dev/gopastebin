@@ -10,8 +10,15 @@ import (
 	"regexp"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/argon2"
 )
+
+func SetupUserRoutes(db *sql.DB, router *mux.Router) {
+	router.HandleFunc("/user/signup", Signup(db)).Methods("POST")
+	router.HandleFunc("/user/login", Login(db)).Methods("POST")
+}
+
 
 func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -36,9 +43,8 @@ func Login(db *sql.DB) http.HandlerFunc {
 
 		row.Scan(&user.ID, &user.Email, &user.Password)
 
-		salt := consts.GetSalt()
-
-		attemptedPassword := argon2.Key([]byte(body.Password), salt, 3, 32 * 1024, 4, 32)
+		salt, time, memory, threads, keyLen := consts.GetArgonOptions()
+		attemptedPassword := argon2.Key([]byte(body.Password), salt, time, memory, threads, keyLen)
 
 		if string(attemptedPassword) != user.Password {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -105,9 +111,8 @@ func Signup(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		salt := consts.GetSalt()
-
-		hashedPassword := argon2.Key([]byte(body.Password), salt, 3, 32 * 1024, 4,32)
+		salt, time, memory, threads, keyLen := consts.GetArgonOptions()
+		hashedPassword := argon2.Key([]byte(body.Password), salt, time, memory, threads, keyLen)
 
 		_, err = db.Exec("INSERT INTO user (email, password) VALUES (?, ?)", body.Email, hashedPassword)
 

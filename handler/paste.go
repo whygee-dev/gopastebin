@@ -11,6 +11,12 @@ import (
 	"github.com/sqids/sqids-go"
 )
 
+func SetupPasteRoutes(db *sql.DB, router *mux.Router) {
+	router.HandleFunc("/paste/create", CreatePasteHandler(db)).Methods("PUT")
+	router.HandleFunc("/paste/{id}", GetPasteHandler(db)).Methods("GET")
+	router.HandleFunc("/stats", GetPasteStatsHandler(db)).Methods("GET")
+}
+
 func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetPasteHandler")
@@ -20,11 +26,18 @@ func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 
 		row := db.QueryRow("SELECT content, short_id, click_count, created_at FROM paste WHERE short_id = ?", id)
 
-		var paste models.Paste = models.Paste{}
+		var paste models.Paste
 
-		row.Scan(&paste.Content, &paste.ShortID, &paste.ClickCount, &paste.CreatedAt)
+		err := row.Scan(&paste.Content, &paste.ShortID, &paste.ClickCount, &paste.CreatedAt)
 
-		_, err := db.Exec("UPDATE paste SET click_count = click_count + 1 WHERE short_id = ?", id)
+		if err == sql.ErrNoRows {
+			log.Println(err)
+
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		_, err = db.Exec("UPDATE paste SET click_count = click_count + 1 WHERE short_id = ?", id)
 
 		if err != nil {
 			log.Println(err)
@@ -43,7 +56,7 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("CreatePasteHandler")
 
-		var body = models.CreatePaste{}
+		var body models.CreatePaste
 
 		decoder := json.NewDecoder(r.Body)
 
@@ -79,15 +92,22 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func GetStatsHandler(db *sql.DB) http.HandlerFunc {
+func GetPasteStatsHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("GetStatsHandler")
+		log.Println("GetPasteStatsHandler")
 
-		var stats = models.Stats{}
+		var stats models.Stats
 
-		row := db.QueryRow("SELECT COUNT(*) as paste_count, SUM(click_count) as click_count FROM paste")
+		row := db.QueryRow("SELECT COUNT(*) as paste_count, SUM(click_count) as click_count, ROUND(AVG(click_count), 0) as avg_click_count FROM paste")
 
-		row.Scan(&stats.TotalPastes, &stats.TotalClicks)
+		err := row.Scan(&stats.TotalPastes, &stats.TotalClicks, &stats.AvgClicks)
+
+		if err == sql.ErrNoRows {
+			log.Println(err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 		
 		w.WriteHeader(http.StatusOK)
 
