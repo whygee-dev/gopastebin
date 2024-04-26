@@ -28,6 +28,20 @@ func CreatePaste(db *sql.DB, data models.CreatePaste) (string, error) {
 	return id, nil
 }
 
+func UpdatePaste(db *sql.DB, data models.UpdatePaste) (*models.Paste, error) {
+	_, err := db.Exec("UPDATE paste SET content = ? WHERE short_id = ?", data.Content, data.ShortID)
+
+	if err != nil {
+		log.Println(err)
+
+		return nil, err
+	}
+
+	updatedPaste, err := GetPaste(db, data.ShortID)
+
+	return &updatedPaste, err
+}
+
 func GetPaste(db *sql.DB, id string) (models.Paste, error) {
 	row := db.QueryRow(`
 		SELECT content, short_id, click_count, created_at FROM paste 
@@ -57,9 +71,5 @@ func GetStats(db *sql.DB) (models.Stats, error) {
 
 	err := row.Scan(&stats.TotalPastes, &stats.TotalClicks, &stats.AvgClicks)
 
-	if err == sql.ErrNoRows {
-		return models.Stats{}, err
-	}
-
-	return stats, nil
+	return stats, err
 }

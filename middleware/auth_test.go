@@ -124,3 +124,21 @@ func TestAuthMiddlewareIgnoreNoBearer(t *testing.T) {
 		t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, w.Code)
 	}
 }
+
+func TestAuthMiddlewareIgnoreEmptyBearer(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middlewareHandler := AuthMiddleware(handler)
+
+	req := httptest.NewRequest("GET", "/protected", nil)
+	req.Header.Set("Authorization", "" )
+	w := httptest.NewRecorder()
+
+	middlewareHandler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("expected status code %d, got %d", http.StatusUnauthorized, w.Code)
+	}
+}

@@ -221,6 +221,39 @@ func TestCreatePasteHandlerInvalidBody(t *testing.T) {
 	}
 }
 
+func TestCreatePasteHandlerIntervalError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE paste`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]string{
+		"content": "content",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
+
+	req, err := http.NewRequest("PUT", utils.BuildUrl("/paste/create", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Response code was %v; want 500", res.Code)
+	}
+}
+
 
 func TestStatsHappyPath(t *testing.T) {
 	db := db.CreateDb()
@@ -269,5 +302,139 @@ func TestStatsHappyPath(t *testing.T) {
 
 	if result["avgClicks"].(float64) != 2 {
 		t.Errorf("Average clicks was %v; want 2", result["avgClicks"])
+	}
+}
+
+func TestStatsInternalError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE paste`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("GET", utils.BuildUrl("/stats", consts.GetPort()), nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Response code was %v; want 500", res.Code)
+	}
+}
+
+
+func TestUpdatePasteHandlerHappyPath(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec("INSERT INTO paste (content, short_id, click_count) VALUES (?, ?, ?)", "content", "short_id", 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := map[string]string{
+		"shortId": "short_id",
+		"content": "newcontent",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
+
+	req, err := http.NewRequest("PATCH", utils.BuildUrl("/paste/update", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Errorf("Response code was %v; want 200", res.Code)
+	}
+
+	var result map[string]interface{}
+
+	decoder := json.NewDecoder(res.Body)
+	decoder.Decode(&result)
+
+	paste_row := db.QueryRow("SELECT content, expiry FROM paste WHERE short_id = ?", result["shortId"])
+
+	var content string
+	var expiry string
+
+	paste_row.Scan(&content, &expiry)
+
+	if content != "newcontent" {
+		t.Errorf("Content was %v; want 'newcontent'", content)
+	}
+}
+
+func TestUpdatePasteHandlerInvalidBody(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	buffer := new(bytes.Buffer)
+
+	req, err := http.NewRequest("PATCH", utils.BuildUrl("/paste/update", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("Response code was %v; want 400", res.Code)
+	}
+}
+
+func TestUpdatePasteHandlerInternalError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupPasteRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE paste`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]string{
+		"id": "short_id",
+		"content": "newcontent",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
+
+	req, err := http.NewRequest("PATCH", utils.BuildUrl("/paste/update", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Response code was %v; want 500", res.Code)
 	}
 }

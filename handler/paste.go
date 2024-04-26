@@ -13,6 +13,7 @@ import (
 
 func SetupPasteRoutes(db *sql.DB, router *mux.Router) {
 	router.HandleFunc("/paste/create", CreatePasteHandler(db)).Methods("PUT")
+	router.HandleFunc("/paste/update", UpdatePasteHandler(db)).Methods("PATCH")
 	router.HandleFunc("/paste/{id}", GetPasteHandler(db)).Methods("GET")
 	router.HandleFunc("/stats", GetPasteStatsHandler(db)).Methods("GET")
 }
@@ -34,6 +35,7 @@ func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -53,6 +55,7 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
 		}
 
 		id, err := service.CreatePaste(db, body)
@@ -61,11 +64,41 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 			log.Println(err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		
 		w.WriteHeader(http.StatusCreated)
 
 		json.NewEncoder(w).Encode(map[string]string{"id": id})
+	}
+}
+
+func UpdatePasteHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("UpdatePasteHandler")
+		var body models.UpdatePaste
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&body)
+
+		if err != nil {
+			log.Println(err)
+
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		updatedPast, err := service.UpdatePaste(db, body)
+
+		if err != nil {
+			log.Println(err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		
+		w.WriteHeader(http.StatusOK)
+
+		json.NewEncoder(w).Encode(updatedPast)
 	}
 }
 
@@ -81,6 +114,7 @@ func GetPasteStatsHandler(db *sql.DB) http.HandlerFunc {
 			log.Println(err)
 			
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		
 		w.WriteHeader(http.StatusOK)

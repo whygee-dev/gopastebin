@@ -56,6 +56,41 @@ func TestLoginHappyPath(t *testing.T) {
 	}
 }
 
+func TestLoginPasswordIncorrect(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupUserRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	email := "admin@gmail.com"
+	_, err := db.Exec("INSERT INTO user (email, password) VALUES (?, ?)", email, "password")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]string{
+		"email": email,
+		"password": "any",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
+
+	req, err := http.NewRequest("POST", utils.BuildUrl("/user/login", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Errorf("Response code was %v; want 401", res.Code)
+	}
+}
+
 func TestLoginNotFound(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
@@ -91,6 +126,40 @@ func TestLoginInvalidBody(t *testing.T) {
 	defer utils.TestTearDown(db)
 
 	buffer := new(bytes.Buffer)
+
+	req, err := http.NewRequest("POST", utils.BuildUrl("/user/login", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("Response code was %v; want 500", res.Code)
+	}
+}
+
+func TestLoginInternalError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupUserRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE user`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]string{
+		"email": "any",
+		"password": "any",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
 
 	req, err := http.NewRequest("POST", utils.BuildUrl("/user/login", consts.GetPort()), buffer)
 
@@ -259,46 +328,13 @@ func TestRegisterEmptyEmail(t *testing.T) {
 	}
 }
 
-func TestRegisterEmptyPassword(t *testing.T) {
-	db := db.CreateDb()
-	router := mux.NewRouter()
-	SetupUserRoutes(db, router)
-	defer utils.TestTearDown(db)
-
-	email := ""
-	rawPassword := "password"
-
-	body := map[string]string{
-		"email": email,
-		"password": rawPassword,
-	}
-	buffer := new(bytes.Buffer)
-
-	json.NewEncoder(buffer).Encode(body)
-
-	req, err := http.NewRequest("POST", utils.BuildUrl("/user/signup", consts.GetPort()), buffer)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Errorf("Response code was %v; want 400", res.Code)
-	}
-}
-
-
 func TestRegisterPasswordLessThan8Chars(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
 	SetupUserRoutes(db, router)
 	defer utils.TestTearDown(db)
 
-	email := ""
+	email := "admin@gmail.com"
 	rawPassword := "pass"
 
 	body := map[string]string{
@@ -361,3 +397,39 @@ func TestRegisterUserExists(t *testing.T) {
 		t.Errorf("Response code was %v; want 409", res.Code)
 	}
 }
+
+
+func TestRegisterInteralError(t *testing.T) {
+	db := db.CreateDb()
+	router := mux.NewRouter()
+	SetupUserRoutes(db, router)
+	defer utils.TestTearDown(db)
+
+	_, err := db.Exec(`DROP TABLE user`)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]string{
+		"email": "admin@gmail.com",
+		"password": "password",
+	}
+	buffer := new(bytes.Buffer)
+	json.NewEncoder(buffer).Encode(body)
+
+	req, err := http.NewRequest("POST", utils.BuildUrl("/user/signup", consts.GetPort()), buffer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+
+	if res.Code != http.StatusConflict {
+		t.Errorf("Response code was %v; want 409", res.Code)
+	}
+}
+

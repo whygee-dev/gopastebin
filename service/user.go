@@ -9,8 +9,14 @@ import (
 func CreateUser(db *sql.DB, data models.CreateUser) (*custom_errors.UserExists, error) {
 	row := db.QueryRow("SELECT id FROM user WHERE email = ?", data.Email)
 
-	if row.Scan() != sql.ErrNoRows {
+	scan := row.Scan()
+
+	if scan != sql.ErrNoRows {
 		return &custom_errors.UserExists{}, nil
+	}
+	
+	if scan != nil {
+		return nil, scan
 	}
 
 	hashedPassword := HashPassword(data.Password)

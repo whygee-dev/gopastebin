@@ -18,10 +18,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		if slices.Contains(publicRoutes, r.URL.Path) {
 			next.ServeHTTP(w, r)
+
+			return
 		}
 
 		if bearer == "" {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+
+			return
 		}
 
 		bearerSplit := strings.Split(bearer, " ")
