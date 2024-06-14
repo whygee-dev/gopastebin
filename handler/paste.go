@@ -20,7 +20,6 @@ func SetupPasteRoutes(db *sql.DB, router *mux.Router) {
 
 func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("GetPasteHandler")
 		vars := mux.Vars(r)
 		id := vars["id"]
 
@@ -46,7 +45,6 @@ func GetPasteHandler(db *sql.DB) http.HandlerFunc {
 
 func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("CreatePasteHandler")
 		var body models.CreatePaste
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&body)
@@ -75,7 +73,6 @@ func CreatePasteHandler(db *sql.DB) http.HandlerFunc {
 
 func UpdatePasteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("UpdatePasteHandler")
 		var body models.UpdatePaste
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&body)
@@ -104,8 +101,6 @@ func UpdatePasteHandler(db *sql.DB) http.HandlerFunc {
 
 func GetPasteStatsHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("GetPasteStatsHandler")
-
 		var stats models.Stats
 
 		stats, err := service.GetStats(db)

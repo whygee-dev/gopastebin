@@ -20,8 +20,6 @@ func SetupUserRoutes(db *sql.DB, router *mux.Router) {
 
 func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Login")
-
 		var body = models.LoginUser{}
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&body)
@@ -70,7 +68,6 @@ func Login(db *sql.DB) http.HandlerFunc {
 
 func Signup(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Signup")
 		var body = models.CreateUser{}
 		decoder := json.NewDecoder(r.Body)	
 		err := decoder.Decode(&body)
@@ -113,5 +110,7 @@ func Signup(db *sql.DB) http.HandlerFunc {
 			
 
 		w.WriteHeader(http.StatusCreated)
+
+		json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
 	}
 }

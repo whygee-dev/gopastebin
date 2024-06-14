@@ -206,7 +206,7 @@ func TestRegisterHappyPath(t *testing.T) {
 	if res.Code != http.StatusCreated {
 		t.Errorf("Response code was %v; want 201", res.Code)
 	}
-
+	
 	var result map[string]interface{}
 
 	decoder := json.NewDecoder(res.Body)
@@ -214,7 +214,6 @@ func TestRegisterHappyPath(t *testing.T) {
 	decoder.Decode(&result)
 
 	if result["id"] == "" {
-
 		t.Errorf("Response body was %v; want id", result)
 	}
 	
@@ -238,7 +237,6 @@ func TestRegisterHappyPath(t *testing.T) {
 	if string(attemptedPassword) != user.Password {
 		t.Errorf("Password was %v; want %v", user.Password, string(attemptedPassword))
 	}
-
 }
 
 func TestRegisterInvalidBody(t *testing.T) {
@@ -399,7 +397,7 @@ func TestRegisterUserExists(t *testing.T) {
 }
 
 
-func TestRegisterInteralError(t *testing.T) {
+func TestRegisterInternalError(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
 	SetupUserRoutes(db, router)

@@ -15,9 +15,6 @@ func CreateUser(db *sql.DB, data models.CreateUser) (*custom_errors.UserExists, 
 		return &custom_errors.UserExists{}, nil
 	}
 	
-	if scan != nil {
-		return nil, scan
-	}
 
 	hashedPassword := HashPassword(data.Password)
 
