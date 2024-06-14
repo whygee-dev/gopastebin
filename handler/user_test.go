@@ -142,7 +142,7 @@ func TestLoginInvalidBody(t *testing.T) {
 	}
 }
 
-func TestLoginInternalError(t *testing.T) {
+func TestLoginDbInternalError(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
 	SetupUserRoutes(db, router)
@@ -397,7 +397,7 @@ func TestRegisterUserExists(t *testing.T) {
 }
 
 
-func TestRegisterInternalError(t *testing.T) {
+func TestRegisterDbInternalError(t *testing.T) {
 	db := db.CreateDb()
 	router := mux.NewRouter()
 	SetupUserRoutes(db, router)
