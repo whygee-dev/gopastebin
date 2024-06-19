@@ -11,6 +11,18 @@ This project provides a simple Paste Bin REST API implemented in GoLang using Mu
 - Retrieve an existing paste by its ID, with click count.
 - Retrieve global stats
 
+## Routes
+
+- Signup: POST /user/signup [email, password]
+- Login: POST /user/login [email, password]
+
+[Authenticated routes, require a valid JWT token in the Authorization header, e.g. `Bearer <token>`]
+
+- Create a new paste: PUT /paste/create => {content, expiry}
+- Update an existing paste: PATCH /paste/update => {id, content}
+- Retrieve an existing paste: GET /paste/{id}
+- Retrieve global stats: GET /stats
+
 ## Installation
 
 To run this project locally, ensure you have Go installed on your machine.
